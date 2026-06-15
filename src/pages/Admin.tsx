@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db, storage, handleFirestoreError, OperationType } from '../firebase';
-import { UploadCloud, CheckCircle2, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { UploadCloud, CheckCircle2, AlertCircle, Loader2, FileText, Lock } from 'lucide-react';
 
 export default function Admin() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const [subject, setSubject] = useState('');
   const [chapter, setChapter] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -12,6 +16,16 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'admin') {
+      setAuthenticated(true);
+      setPasswordError('');
+    } else {
+      setPasswordError('Incorrect password');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +41,9 @@ export default function Admin() {
     try {
       // 1. Upload to Storage
       const fileRef = ref(storage, `pdfs/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
+      await uploadBytes(fileRef, file).catch(err => {
+        throw new Error('Storage Upload Failed: ' + (err.message || 'Permissions denied.'));
+      });
       const url = await getDownloadURL(fileRef);
 
       // 2. Save metadata to Firestore
@@ -36,26 +52,62 @@ export default function Admin() {
           subject,
           chapter,
           url,
-          createdAt: Date.now() // Firebase Timestamp would be serverTimestamp(), but we need to sort using frontend usually, serverTimestamp() is fine but let's use Date.now() so it returns an ordered int or serverTimestamp if preferred. We'll use Date.now() to match our TS interface.
+          createdAt: Date.now()
         });
-      } catch (dbError) {
+      } catch (dbError: any) {
         handleFirestoreError(dbError, OperationType.CREATE, 'pdfs');
+        throw new Error('Firestore Save Failed: ' + (dbError.message || 'Permissions denied.'));
       }
 
       setSuccess(true);
       setSubject('');
       setChapter('');
       setFile(null);
-      // Reset form file input visually
       (document.getElementById('pdf-upload') as HTMLInputElement).value = '';
       
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'An error occurred while uploading. If storage permissions are secure, you may need to wait for step 2 (Auth).');
+      console.error('Upload Process Error:', err);
+      const errorMessage = err.message || 'An error occurred while uploading. Please check permissions.';
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!authenticated) {
+    return (
+      <div className="w-full flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white dark:bg-[#1a080c] rounded-[8px] border-t-[3px] border-[#7C2D12] shadow-lg p-8 flex flex-col w-full max-w-sm">
+          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <Lock className="w-5 h-5 text-[#4C0519] dark:text-[#f5ebe6]" />
+            Admin Login
+          </h3>
+          <form onSubmit={handleLogin} className="space-y-6 flex-grow">
+            {passwordError && (
+              <div className="flex items-center gap-2 p-3 text-sm text-red-900 bg-red-100 dark:bg-red-900/30 dark:text-red-200 rounded-md">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <p>{passwordError}</p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="block text-[11px] uppercase font-bold tracking-widest opacity-60">Password</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full px-4 py-3 bg-[#fffdf9] dark:bg-[#120206] border border-[#2d161022] dark:border-[#f5ebe622] rounded-md focus:outline-none focus:border-[#4C0519] text-sm transition-all"
+              />
+            </div>
+            <button className="w-full py-4 bg-[#4C0519] text-white rounded-md font-bold uppercase tracking-widest text-sm shadow-xl shadow-[#4C051922] active:transform active:scale-[0.98] transition-all">
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
