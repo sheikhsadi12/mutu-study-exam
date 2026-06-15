@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "Pdf": {
+      "title": "Pdf",
+      "description": "A study material PDF",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "chapter": { "type": "string" },
+        "url": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["subject", "chapter", "url", "createdAt"]
+    }
+  },
+  "firestore": {
+    "pdfs": {
+      "schema": { "$ref": "#/entities/Pdf" },
+      "description": "Collection storing PDF study materials"
+    }
+  }
+}
