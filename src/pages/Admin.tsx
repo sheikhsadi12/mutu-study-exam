@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { CheckCircle2, AlertCircle, Loader2, Lock, Link as LinkIcon, Code } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Lock, Link as LinkIcon, Code, Settings, Trash2 } from 'lucide-react';
 
 export default function Admin() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'link' | 'html'>('link');
+  const [activeTab, setActiveTab] = useState<'link' | 'html' | 'manage'>('link');
 
   // Form State - Material Link
   const [subject, setSubject] = useState('');
@@ -20,9 +20,57 @@ export default function Admin() {
   const [htmlTopic, setHtmlTopic] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
 
+  // Manage State
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [fetchingManage, setFetchingManage] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (authenticated && activeTab === 'manage') {
+      fetchResources();
+    }
+  }, [authenticated, activeTab]);
+
+  const fetchResources = async () => {
+    setFetchingManage(true);
+    try {
+      const p1 = getDocs(query(collection(db, 'materials'), orderBy('createdAt', 'desc')));
+      const p2 = getDocs(query(collection(db, 'html_notes'), orderBy('createdAt', 'desc')));
+      
+      const [matSnap, noteSnap] = await Promise.all([p1, p2]);
+      
+      setMaterials(matSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setNotes(noteSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch resources: ' + (err.message || ''));
+    } finally {
+      setFetchingManage(false);
+    }
+  };
+
+  const handleDelete = async (collectionName: string, id: string) => {
+    // Removed window.confirm because it is blocked in iframes.
+    setDeletingId(id);
+    try {
+      await deleteDoc(doc(db, collectionName, id));
+      if (collectionName === 'materials') {
+        setMaterials(prev => prev.filter(m => m.id !== id));
+      } else {
+        setNotes(prev => prev.filter(n => n.id !== id));
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to delete: ' + err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,20 +182,27 @@ export default function Admin() {
           Admin Dashboard
         </h3>
 
-        <div className="flex gap-2 mb-6 bg-[#2d16100a] dark:bg-[#f5ebe60a] p-1 rounded-md">
+        <div className="flex gap-2 mb-6 bg-[#2d16100a] dark:bg-[#f5ebe60a] p-1 rounded-md overflow-x-auto">
           <button 
             type="button"
             onClick={() => { setActiveTab('link'); setError(''); setSuccess(false); }}
-            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest rounded transition-all flex items-center justify-center gap-2 ${activeTab === 'link' ? 'bg-white dark:bg-[#1a080c] text-[#4C0519] dark:text-[#f5ebe6] shadow' : 'opacity-60 hover:opacity-100'}`}
+            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest rounded transition-all whitespace-nowrap px-4 flex items-center justify-center gap-2 ${activeTab === 'link' ? 'bg-white dark:bg-[#1a080c] text-[#4C0519] dark:text-[#f5ebe6] shadow' : 'opacity-60 hover:opacity-100'}`}
           >
-            <LinkIcon className="w-3.5 h-3.5" /> Material Link
+            <LinkIcon className="w-3.5 h-3.5" /> Material
           </button>
           <button 
             type="button"
             onClick={() => { setActiveTab('html'); setError(''); setSuccess(false); }}
-            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest rounded transition-all flex items-center justify-center gap-2 ${activeTab === 'html' ? 'bg-white dark:bg-[#1a080c] text-[#4C0519] dark:text-[#f5ebe6] shadow' : 'opacity-60 hover:opacity-100'}`}
+            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest rounded transition-all whitespace-nowrap px-4 flex items-center justify-center gap-2 ${activeTab === 'html' ? 'bg-white dark:bg-[#1a080c] text-[#4C0519] dark:text-[#f5ebe6] shadow' : 'opacity-60 hover:opacity-100'}`}
           >
             <Code className="w-3.5 h-3.5" /> HTML Note
+          </button>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab('manage'); setError(''); setSuccess(false); }}
+            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest rounded transition-all whitespace-nowrap px-4 flex items-center justify-center gap-2 ${activeTab === 'manage' ? 'bg-white dark:bg-[#1a080c] text-[#4C0519] dark:text-[#f5ebe6] shadow' : 'opacity-60 hover:opacity-100'}`}
+          >
+            <Settings className="w-3.5 h-3.5" /> Manage
           </button>
         </div>
 
@@ -207,7 +262,7 @@ export default function Admin() {
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Deploying...</span></> : <span>Deploy Material</span>}
             </button>
           </form>
-        ) : (
+        ) : activeTab === 'html' ? (
           <form onSubmit={handleHtmlSubmit} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -245,9 +300,87 @@ export default function Admin() {
               disabled={loading}
               className="w-full py-4 bg-[#4C0519] text-white rounded-md font-bold uppercase tracking-widest text-sm shadow-xl shadow-[#4C051922] active:transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all mt-4"
             >
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Deploying...</span></> : <span>Publish HTML Note</span>}
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Publish HTML Note</span></> : <span>Publish HTML Note</span>}
             </button>
           </form>
+        ) : (
+          <div className="space-y-6">
+            {fetchingManage ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="w-8 h-8 animate-spin text-[#4C0519]" />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h4 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-4 border-b border-[#2d161022] dark:border-[#f5ebe622] pb-2">PDF Materials</h4>
+                  {materials.length === 0 ? (
+                    <p className="text-xs opacity-50 py-2">No materials found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {materials.map(m => (
+                        <div key={m.id} className="flex items-center justify-between p-3 bg-[#fffdf9] dark:bg-[#120206] border border-[#2d161022] dark:border-[#f5ebe622] rounded-md">
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold truncate">{m.chapter}</p>
+                            <p className="text-xs opacity-60 truncate">{m.subject}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {deletingId === m.id + '_confirm' ? (
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleDelete('materials', m.id)} className="text-[10px] font-bold uppercase tracking-wide bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Sure?</button>
+                                <button onClick={() => setDeletingId(null)} className="text-[10px] uppercase opacity-70 px-2 py-1 hover:opacity-100">Cancel</button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeletingId(m.id + '_confirm')}
+                                disabled={deletingId === m.id}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
+                              >
+                                {deletingId === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-4 border-b border-[#2d161022] dark:border-[#f5ebe622] pb-2">HTML Notes</h4>
+                  {notes.length === 0 ? (
+                    <p className="text-xs opacity-50 py-2">No notes found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {notes.map(n => (
+                        <div key={n.id} className="flex items-center justify-between p-3 bg-[#fffdf9] dark:bg-[#120206] border border-[#2d161022] dark:border-[#f5ebe622] rounded-md">
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold truncate">{n.topic}</p>
+                            <p className="text-xs opacity-60 truncate">{n.subject}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {deletingId === n.id + '_confirm' ? (
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleDelete('html_notes', n.id)} className="text-[10px] font-bold uppercase tracking-wide bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Sure?</button>
+                                <button onClick={() => setDeletingId(null)} className="text-[10px] uppercase opacity-70 px-2 py-1 hover:opacity-100">Cancel</button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeletingId(n.id + '_confirm')}
+                                disabled={deletingId === n.id}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
+                              >
+                                {deletingId === n.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

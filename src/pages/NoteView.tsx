@@ -92,7 +92,11 @@ export default function NoteView() {
     `;
 
     if (/<html/i.test(htmlContent)) {
-      return htmlContent.replace(/<\/body>/i, `${resizeScript}</body>`);
+      if (/<\/body>/i.test(htmlContent)) {
+        return htmlContent.replace(/<\/body>/i, `${resizeScript}</body>`);
+      } else {
+        return htmlContent + resizeScript;
+      }
     }
 
     // Default utility layer for raw HTML snippets
@@ -119,23 +123,19 @@ export default function NoteView() {
         <style>
           body { 
             margin: 0; 
+            padding: 0;
             font-family: 'Hind Siliguri', sans-serif;
             background-color: transparent;
             -webkit-tap-highlight-color: transparent;
           }
-          .a4-wrapper {
-            padding: 1rem;
-          }
-          @media (min-width: 640px) {
-            .a4-wrapper { padding: 1.5rem; }
-          }
-          @media (min-width: 768px) {
-            .a4-wrapper { padding: 2.5rem; }
+          .html-wrapper {
+            padding: 0;
+            width: 100%;
           }
         </style>
       </head>
       <body>
-        <div class="a4-wrapper">
+        <div class="html-wrapper">
           <div class="prose prose-stone max-w-none prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-a:text-[#4C0519] prose-img:rounded-md prose-table:w-full prose-th:bg-[#4C0519]/5 prose-td:border prose-th:border prose-td:border-[#2d161022] prose-th:border-[#2d161022]">
             ${htmlContent}
           </div>
@@ -164,26 +164,26 @@ export default function NoteView() {
   }
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
-      <div>
-        <Link to="/" className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest text-[#4C0519] dark:text-[#f5ebe6] opacity-70 hover:opacity-100 transition-opacity mb-4">
+    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full mb-8">
+      <div className="pt-2">
+        <Link to="/" className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest text-[#4C0519] dark:text-[#f5ebe6] opacity-70 hover:opacity-100 transition-opacity mb-2">
           <ChevronLeft className="w-4 h-4" /> Back to Resources
         </Link>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">{note.topic}</h1>
-        <div className="flex items-center gap-4 text-xs font-mono opacity-60">
-          <span className="bg-[#2d161010] dark:bg-[#f5ebe610] px-2 py-1 rounded">{note.subject}</span>
-          <span>{new Date(note.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">{note.topic}</h1>
+        <div className="flex items-center gap-3 text-xs font-mono opacity-60">
+          <span className="bg-[#2d161010] dark:bg-[#f5ebe610] px-2 py-0.5 rounded">{note.subject}</span>
+          <span>{new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
       </div>
 
-      <div className="w-full flex justify-center pb-8 border-b border-[#2d16101a] dark:border-[#f5ebe61a] overflow-x-auto">
-        <div className="w-full max-w-[794px] bg-[#fffdf9] dark:bg-[#1a080c] shadow-2xl rounded-[2px] border-t-[4px] border-[#7C2D12] overflow-hidden border border-[#2d161011] dark:border-[#f5ebe611] mx-auto flex-shrink-0">
+      <div className="w-full flex justify-center pb-4 border-b border-[#2d16101a] dark:border-[#f5ebe61a]">
+        <div className="w-full bg-[#fffdf9] dark:bg-[#1a080c] shadow-md rounded-[2px] border-t-[4px] border-[#7C2D12] overflow-hidden border border-[#2d161011] dark:border-[#f5ebe611]">
           <iframe
             ref={iframeRef}
             srcDoc={getSandboxContent(note.htmlContent)}
             sandbox="allow-scripts allow-modals allow-popups allow-same-origin allow-forms"
             className="w-full border-none transition-all duration-300"
-            style={{ height: `${iframeHeight}px` }}
+            style={{ height: `${iframeHeight}px`, minHeight: '300px' }}
             title={`Interactive Sandbox: ${note.topic}`}
           />
         </div>

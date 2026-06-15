@@ -49,10 +49,10 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
   return (
     <div 
       ref={containerRef}
-      className={`flex flex-col bg-[#fffdf9] dark:bg-[#1a080c] rounded-[2px] overflow-hidden ${isFullscreen ? 'w-screen h-screen' : 'w-full h-[700px]'}`}
+      className={`flex flex-col bg-[#fffdf9] dark:bg-[#1a080c] overflow-hidden ${isFullscreen ? 'w-screen h-screen' : 'w-full h-[700px] border border-[#2d161022] dark:border-[#f5ebe622] rounded-[2px]'}`}
     >
       {/* Glassmorphic Top Controller Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-[#120206]/80 backdrop-blur-md border-b-2 border-[#7C2D12] shrink-0 sticky top-0 z-10 shadow-sm">
+      <div className="flex items-center justify-between px-2 py-1.5 sm:px-4 sm:py-2 bg-white/80 dark:bg-[#120206]/80 backdrop-blur-md border-b border-[#7C2D12] shrink-0 sticky top-0 z-10 shadow-sm">
         <h3 className="font-bold text-sm truncate max-w-[40%] flex items-center gap-2 text-[#4C0519] dark:text-[#f5ebe6]">
           {title}
         </h3>
@@ -90,11 +90,11 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
             target="_blank"
             rel="noopener noreferrer"
             download
-            className="flex items-center gap-2 py-2 px-3 sm:px-4 ml-1 bg-[#4C0519] text-white rounded-md transition-colors hover:bg-[#70102a] active:scale-95"
+            className="flex items-center gap-1.5 py-1.5 px-2 sm:px-3 ml-1 bg-[#4C0519] text-white rounded transition-colors hover:bg-[#70102a] active:scale-95"
             title="Download PDF"
           >
-            <Download className="w-4 h-4" />
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest hidden md:inline">Download PDF</span>
+            <Download className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden md:inline">Download</span>
           </a>
         </div>
       </div>
