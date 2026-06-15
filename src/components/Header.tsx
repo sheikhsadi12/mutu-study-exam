@@ -35,17 +35,17 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 px-6 sm:px-10 flex items-center justify-between border-b border-[#2d16101a] dark:border-[#f5ebe61a] bg-white/50 dark:bg-[#1a080c]/50 backdrop-blur-sm z-10 sticky top-0 transition-colors">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-[#4C0519] rounded-md flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-lg">M</span>
+    <header className="h-16 px-4 sm:px-10 flex items-center justify-between border-b border-[#2d16101a] dark:border-[#f5ebe61a] bg-white/50 dark:bg-[#1a080c]/50 backdrop-blur-sm z-10 sticky top-0 transition-colors">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#4C0519] rounded-md flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm sm:text-lg">M</span>
         </div>
-        <Link to="/" className="text-xl font-bold tracking-tight text-[#4C0519] dark:text-[#f5ebe6]">
+        <Link to="/" className="text-sm sm:text-xl font-bold tracking-tight text-[#4C0519] dark:text-[#f5ebe6] whitespace-nowrap">
           MUTU STUDY
         </Link>
       </div>
-      <div className="flex items-center gap-6">
-        <nav className="gap-8 font-medium text-sm uppercase tracking-widest hidden sm:flex items-center">
+      <div className="flex items-center gap-3 sm:gap-6">
+        <nav className="flex gap-4 sm:gap-8 font-medium text-xs sm:text-sm uppercase tracking-widest items-center">
           <Link 
             to="/" 
             className={`transition-opacity ${location.pathname === '/' ? 'text-[#4C0519] dark:text-white border-b border-[#4C0519] dark:border-white' : 'opacity-60 hover:opacity-100'}`}
@@ -54,7 +54,7 @@ export default function Header() {
           </Link>
         </nav>
         
-        <div className="flex items-center gap-4 border-l border-[#2d16101a] dark:border-[#f5ebe61a] pl-4 sm:pl-6 ml-2 sm:ml-4">
+        <div className="flex items-center gap-2 sm:gap-4 border-l border-[#2d16101a] dark:border-[#f5ebe61a] pl-3 sm:pl-6 ml-1 sm:ml-4">
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-[#2d16100a] dark:hover:bg-[#f5ebe61a] transition-colors opacity-70 hover:opacity-100"
@@ -73,14 +73,32 @@ export default function Header() {
             </button>
             
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-[8px] bg-white dark:bg-[#1a080c] shadow-lg border border-[#2d16101a] dark:border-[#f5ebe61a] py-1 z-50">
+              <div className="absolute right-0 mt-2 w-56 rounded-[8px] bg-white dark:bg-[#1a080c] shadow-xl border border-[#2d16101a] dark:border-[#f5ebe61a] py-2 z-50">
+                <div className="px-4 py-2 border-b border-[#2d16100a] dark:border-[#f5ebe60a] mb-2">
+                  <p className="text-[10px] uppercase tracking-widest font-bold opacity-50">Admin Status</p>
+                  <p className="text-sm font-semibold truncate text-[#4C0519] dark:text-[#f5ebe6]">Sheikh Sadi</p>
+                </div>
+                <Link 
+                  to="/" 
+                  onClick={() => setDropdownOpen(false)}
+                  className="block px-4 py-2 text-sm font-medium hover:bg-[#4C0519]/5 dark:hover:bg-[#4C0519]/20 transition-colors"
+                >
+                  Home Dashboard
+                </Link>
                 <Link 
                   to="/admin" 
                   onClick={() => setDropdownOpen(false)}
-                  className="block px-4 py-2 text-sm uppercase tracking-wider font-bold text-[#4C0519] dark:text-[#f5ebe6] hover:bg-[#4C0519]/5 dark:hover:bg-[#4C0519]/20 transition-colors"
+                  className="block px-4 py-2 text-sm font-medium hover:bg-[#4C0519]/5 dark:hover:bg-[#4C0519]/20 transition-colors"
                 >
-                  Admin Login
+                  Admin Portal
                 </Link>
+                <button 
+                  onClick={() => { toggleTheme(); setDropdownOpen(false); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-[#4C0519]/5 dark:hover:bg-[#4C0519]/20 transition-colors flex items-center justify-between"
+                >
+                  <span>Toggle Theme</span>
+                  {isDark ? <Sun className="w-4 h-4 opacity-50" /> : <Moon className="w-4 h-4 opacity-50" />}
+                </button>
               </div>
             )}
           </div>

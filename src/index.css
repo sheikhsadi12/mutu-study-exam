@@ -1,7 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --font-sans: "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
 }
+
 

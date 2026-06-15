@@ -2,11 +2,23 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
-import firebaseConfig from '../firebase-applet-config.json';
+
+// Your web app's Firebase configuration (Mutu Study New Project)
+const firebaseConfig = {
+  apiKey: "AIzaSyD_VghVBtnO6y2x1ZSFOmWV8LBNwGr3lOc",
+  authDomain: "mutu-study.firebaseapp.com",
+  projectId: "mutu-study",
+  storageBucket: "mutu-study.firebasestorage.app",
+  messagingSenderId: "572272855315",
+  appId: "1:572272855315:web:4288a0eb67b66cd3e1f2e6",
+  measurementId: "G-5VHP45WNK8"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const storage = getStorage(app);
+storage.maxUploadRetryTime = 10000; // Fail quickly (10s) instead of 10 min default
+storage.maxOperationRetryTime = 10000;
 export const auth = getAuth(app);
 
 export enum OperationType {
