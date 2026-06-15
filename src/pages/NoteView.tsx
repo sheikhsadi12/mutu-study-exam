@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { ChevronLeft, MessageSquare, Send, User } from 'lucide-react';
 
@@ -11,6 +11,8 @@ export default function NoteView() {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [commenting, setCommenting] = useState(false);
+  const [iframeHeight, setIframeHeight] = useState(1123);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -43,6 +45,17 @@ export default function NoteView() {
     return () => unsubscribe();
   }, [id]);
 
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'sandbox-resize' && e.data.height) {
+        // Minimum A4 height is about 1123px (for 794px width at 96 DPI)
+        setIframeHeight(Math.max(1123, e.data.height));
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !id) return;
@@ -61,6 +74,76 @@ export default function NoteView() {
     } finally {
       setCommenting(false);
     }
+  };
+
+  const getSandboxContent = (htmlContent: string) => {
+    const resizeScript = `
+      <script>
+        function notifyResize() {
+          const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+          window.parent.postMessage({ type: 'sandbox-resize', height: h }, '*');
+        }
+        window.addEventListener('load', notifyResize);
+        window.addEventListener('resize', notifyResize);
+        new MutationObserver(notifyResize).observe(document.body, { childList: true, subtree: true, attributes: true });
+        // Trigger initial resize after a small delay to allow for reflows
+        setTimeout(notifyResize, 100);
+      </script>
+    `;
+
+    if (/<html/i.test(htmlContent)) {
+      return htmlContent.replace(/<\/body>/i, `${resizeScript}</body>`);
+    }
+
+    // Default utility layer for raw HTML snippets
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+          tailwind.config = {
+            darkMode: 'class',
+            theme: {
+              extend: {
+                fontFamily: {
+                  sans: ['"Hind Siliguri"', 'sans-serif'],
+                }
+              }
+            }
+          }
+        </script>
+        <style>
+          body { 
+            margin: 0; 
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: transparent;
+            -webkit-tap-highlight-color: transparent;
+          }
+          .a4-wrapper {
+            padding: 1rem;
+          }
+          @media (min-width: 640px) {
+            .a4-wrapper { padding: 1.5rem; }
+          }
+          @media (min-width: 768px) {
+            .a4-wrapper { padding: 2.5rem; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="a4-wrapper">
+          <div class="prose prose-stone max-w-none prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-a:text-[#4C0519] prose-img:rounded-md prose-table:w-full prose-th:bg-[#4C0519]/5 prose-td:border prose-th:border prose-td:border-[#2d161022] prose-th:border-[#2d161022]">
+            ${htmlContent}
+          </div>
+        </div>
+        ${resizeScript}
+      </body>
+      </html>
+    `;
   };
 
   if (loading) {
@@ -94,13 +177,15 @@ export default function NoteView() {
       </div>
 
       <div className="w-full flex justify-center pb-8 border-b border-[#2d16101a] dark:border-[#f5ebe61a] overflow-x-auto">
-        <div className="w-full max-w-[794px] min-h-[1123px] bg-[#fffdf9] dark:bg-[#1a080c] shadow-2xl rounded-[2px] border-t-[4px] border-[#7C2D12] overflow-hidden border border-[#2d161011] dark:border-[#f5ebe611] mx-auto flex-shrink-0">
-          <div className="p-4 sm:p-6 md:p-10 text-[#2d1610] dark:text-[#f5ebe6]">
-            <div 
-              className="prose prose-stone dark:prose-invert max-w-none prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-a:text-[#4C0519] dark:prose-a:text-[#f5ebe6] prose-img:rounded-md prose-table:w-full prose-th:bg-[#4C0519]/5 dark:prose-th:bg-[#f5ebe6]/5 prose-td:border prose-th:border prose-td:border-[#2d161022] dark:prose-td:border-[#f5ebe622] prose-th:border-[#2d161022] dark:prose-th:border-[#f5ebe622]"
-              dangerouslySetInnerHTML={{ __html: note.htmlContent }} 
-            />
-          </div>
+        <div className="w-full max-w-[794px] bg-[#fffdf9] dark:bg-[#1a080c] shadow-2xl rounded-[2px] border-t-[4px] border-[#7C2D12] overflow-hidden border border-[#2d161011] dark:border-[#f5ebe611] mx-auto flex-shrink-0">
+          <iframe
+            ref={iframeRef}
+            srcDoc={getSandboxContent(note.htmlContent)}
+            sandbox="allow-scripts allow-modals allow-popups allow-same-origin allow-forms"
+            className="w-full border-none transition-all duration-300"
+            style={{ height: `${iframeHeight}px` }}
+            title={`Interactive Sandbox: ${note.topic}`}
+          />
         </div>
       </div>
 
@@ -161,3 +246,4 @@ export default function NoteView() {
     </div>
   );
 }
+
