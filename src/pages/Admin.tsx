@@ -189,13 +189,13 @@ export default function Admin() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[11px] uppercase font-bold tracking-widest opacity-60">Material URL (PDF / Drive)</label>
+                <label className="block text-[11px] uppercase font-bold tracking-widest opacity-60">Google Drive Shared Link</label>
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-4 py-3 bg-[#fffdf9] dark:bg-[#120206] border border-[#2d161022] dark:border-[#f5ebe622] rounded-md focus:outline-none focus:border-[#4C0519] text-sm transition-all text-blue-600 dark:text-blue-400"
+                  placeholder="https://drive.google.com/file/d/..."
+                  className="w-full px-4 py-3 bg-[#fffdf9] dark:bg-[#120206] border border-[#2d161022] dark:border-[#f5ebe622] rounded-md focus:outline-none focus:border-[#4C0519] text-sm transition-all text-blue-600 dark:text-blue-400 font-mono"
                 />
               </div>
             </div>

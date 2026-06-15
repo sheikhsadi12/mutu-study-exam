@@ -84,18 +84,16 @@ export default function Home() {
                   <div className="text-xs font-mono">{new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 </div>
                 {item.type === 'material' ? (
-                  <a 
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-2 bg-[#4C0519] text-white rounded-full text-xs font-bold uppercase tracking-tighter hover:bg-[#70102a] transition-colors whitespace-nowrap text-center outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4C0519]"
+                  <Link 
+                    to={`/material/${item.id}`}
+                    className="px-5 py-2 bg-[#4C0519] text-white rounded-md text-xs font-bold uppercase tracking-tighter hover:bg-[#70102a] transition-all whitespace-nowrap text-center outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4C0519] shadow-sm transform hover:-translate-y-0.5"
                   >
-                    Download Material
-                  </a>
+                    Open Material
+                  </Link>
                 ) : (
                   <Link 
                     to={`/note/${item.id}`}
-                    className="px-5 py-2 bg-transparent text-[#4C0519] dark:text-[#f5ebe6] border border-[#4C0519] dark:border-[#f5ebe6] rounded-full text-xs font-bold uppercase tracking-tighter hover:bg-[#4C0519]/5 dark:hover:bg-[#f5ebe6]/10 transition-colors whitespace-nowrap text-center outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4C0519]"
+                    className="px-5 py-2 bg-transparent text-[#4C0519] dark:text-[#f5ebe6] border border-[#4C0519] dark:border-[#f5ebe6] rounded-md text-xs font-bold uppercase tracking-tighter hover:bg-[#4C0519]/5 dark:hover:bg-[#f5ebe6]/10 transition-all whitespace-nowrap text-center outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4C0519] transform hover:-translate-y-0.5"
                   >
                     Read Full Note
                   </Link>

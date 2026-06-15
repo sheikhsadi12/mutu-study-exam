@@ -8,6 +8,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import NoteView from './pages/NoteView';
+import MaterialView from './pages/MaterialView';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/note/:id" element={<NoteView />} />
+            <Route path="/material/:id" element={<MaterialView />} />
           </Routes>
         </main>
         <footer className="h-12 border-t border-[#2d161010] dark:border-[#f5ebe610] flex items-center justify-center px-10 text-[10px] uppercase tracking-widest opacity-40 font-semibold shrink-0">

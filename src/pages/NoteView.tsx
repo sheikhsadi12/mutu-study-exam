@@ -23,7 +23,7 @@ export default function NoteView() {
           setNote({ id: docSnap.id, ...docSnap.data() });
         }
       } catch (err) {
-        handleFirestoreError(err, OperationType.READ, 'html_notes');
+        handleFirestoreError(err, OperationType.GET, 'html_notes');
       } finally {
         setLoading(false);
       }
@@ -32,11 +32,11 @@ export default function NoteView() {
 
     const q = query(
       collection(db, 'comments'),
-      where('noteId', '==', id),
-      orderBy('createdAt', 'asc')
+      where('noteId', '==', id)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      docs.sort((a: any, b: any) => a.createdAt - b.createdAt);
       setComments(docs);
     });
 
@@ -93,11 +93,18 @@ export default function NoteView() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#1a080c] rounded-[8px] border-t-[3px] border-[#7C2D12] shadow-sm p-6 sm:p-10 prose prose-stone dark:prose-invert max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-a:text-[#4C0519] dark:prose-a:text-[#f5ebe6]">
-        <div dangerouslySetInnerHTML={{ __html: note.htmlContent }} />
+      <div className="w-full flex justify-center pb-8 border-b border-[#2d16101a] dark:border-[#f5ebe61a] overflow-x-auto">
+        <div className="w-full max-w-[794px] min-h-[1123px] bg-[#fffdf9] dark:bg-[#1a080c] shadow-2xl rounded-[2px] border-t-[4px] border-[#7C2D12] overflow-hidden border border-[#2d161011] dark:border-[#f5ebe611] mx-auto flex-shrink-0">
+          <div className="p-4 sm:p-6 md:p-10 text-[#2d1610] dark:text-[#f5ebe6]">
+            <div 
+              className="prose prose-stone dark:prose-invert max-w-none prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-a:text-[#4C0519] dark:prose-a:text-[#f5ebe6] prose-img:rounded-md prose-table:w-full prose-th:bg-[#4C0519]/5 dark:prose-th:bg-[#f5ebe6]/5 prose-td:border prose-th:border prose-td:border-[#2d161022] dark:prose-td:border-[#f5ebe622] prose-th:border-[#2d161022] dark:prose-th:border-[#f5ebe622]"
+              dangerouslySetInnerHTML={{ __html: note.htmlContent }} 
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="border-t border-[#2d16101a] dark:border-[#f5ebe61a] pt-8">
+      <div className="pt-2">
         <h3 className="text-xl font-bold flex items-center gap-2 mb-6">
           <MessageSquare className="w-5 h-5 text-[#4C0519] dark:text-[#f5ebe6]" />
           Community Discussion
