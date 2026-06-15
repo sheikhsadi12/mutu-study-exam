@@ -23,9 +23,19 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
     }
   };
 
-  const getRenderUrl = () => {
-    if (url.includes('drive.google.com')) {
-      const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  const getDirectDownloadUrl = () => {
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+      const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/uc?id=${match[1]}&export=download`;
+      }
+    }
+    return url;
+  };
+
+  const getPreviewUrl = () => {
+    if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+      const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
         return `https://drive.google.com/file/d/${match[1]}/preview`;
       }
@@ -33,13 +43,13 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
     return url;
   };
 
-  const renderUrl = getRenderUrl();
-  const isDrive = url.includes('drive.google.com');
+  const directUrl = getDirectDownloadUrl();
+  const previewUrl = getPreviewUrl();
 
   return (
     <div 
       ref={containerRef}
-      className={`flex flex-col bg-[#fffdf9] dark:bg-[#1a080c] rounded-[2px] overflow-hidden ${isFullscreen ? 'w-screen h-screen' : 'w-full h-[80vh] min-h-[600px]'}`}
+      className={`flex flex-col bg-[#fffdf9] dark:bg-[#1a080c] rounded-[2px] overflow-hidden ${isFullscreen ? 'w-screen h-screen' : 'w-full h-[700px]'}`}
     >
       {/* Glassmorphic Top Controller Bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-[#120206]/80 backdrop-blur-md border-b-2 border-[#7C2D12] shrink-0 sticky top-0 z-10 shadow-sm">
@@ -76,7 +86,7 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
           </button>
           
           <a
-            href={url}
+            href={directUrl}
             target="_blank"
             rel="noopener noreferrer"
             download
@@ -89,39 +99,23 @@ export default function PDFReader({ url, title = 'Document' }: PDFReaderProps) {
         </div>
       </div>
 
-      {/* PDF Canvas area */}
-      <div className="flex-grow overflow-auto relative bg-[#2d16100a] dark:bg-[#0a0204] flex justify-center p-0 sm:p-4 md:p-8">
+      {/* PDF Canvas area - CSS Cropping Hack */}
+      <div className="relative w-full flex-grow overflow-hidden rounded-b-lg bg-[#fffdf9] dark:bg-[#1a080c]">
         <div 
-          className="transition-all duration-200 origin-top shadow-xl relative bg-white dark:bg-white"
+          className="transition-all duration-200 origin-top shadow-xl relative w-full h-full"
           style={{ 
-            width: '100%', 
-            maxWidth: '1000px',
             transform: `scale(${zoom / 100})`, 
-            height: `${(100 / zoom) * 100}%`,
-            minHeight: '100%'
+            width: `${(100 / zoom) * 100}%`,
+            height: `${(100 / zoom) * 100}%`
           }}
         >
-          {isDrive ? (
-             <iframe 
-               src={renderUrl} 
-               className="w-full h-full border-none absolute inset-0 bg-white"
-               allow="autoplay"
-               title={`Preview of ${title}`}
-             ></iframe>
-          ) : (
-            <object
-              data={url}
-              type="application/pdf"
-              className="w-full h-full border-none absolute inset-0 bg-white"
-            >
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-sm opacity-70 dark:text-[#2d1610]">
-                <p className="mb-4 text-[#2d1610]">Your browser does not support inline PDFs.</p>
-                <a href={url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#4C0519] text-white rounded-md font-bold text-xs uppercase tracking-widest">
-                  Open Direct Link
-                </a>
-              </div>
-            </object>
-          )}
+          <iframe
+            src={previewUrl}
+            className="absolute top-0 left-0 w-full border-none bg-[#fffdf9] dark:bg-[#1a080c]"
+            style={{ height: 'calc(100% + 56px)', marginTop: '-56px' }}
+            title={`Preview of ${title}`}
+            allowFullScreen
+          ></iframe>
         </div>
       </div>
     </div>
